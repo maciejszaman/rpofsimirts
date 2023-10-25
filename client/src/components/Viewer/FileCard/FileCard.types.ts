@@ -5,4 +5,6 @@ export interface FileCardProps {
   setFilesLoading: React.Dispatch<React.SetStateAction<boolean>>;
   setFiles: React.Dispatch<React.SetStateAction<SharedTypes.File[]>>;
   setFailedLoading: React.Dispatch<React.SetStateAction<boolean>>;
+  index: number;
+  viewerType: boolean;
 }

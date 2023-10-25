@@ -8,7 +8,9 @@ import {
   CircularProgress,
   Container,
   Grid,
+  Grow,
   IconButton,
+  Typography,
 } from "@mui/material";
 import { Empty } from "./Empty/Empty";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
@@ -18,7 +20,7 @@ import { ViewerFail } from "./ViewerFail/ViewerFail";
 export const Viewer = ({ viewerType }: Types.ViewerProps) => {
   const [filesLoading, setFilesLoading] = useState(false);
 
-  const domain = "http://192.168.50.163:2137/files/";
+  const domain = "http://localhost:2137/files/";
 
   const [files, setFiles] = useState<SharedTypes.File[]>([]);
 
@@ -27,7 +29,7 @@ export const Viewer = ({ viewerType }: Types.ViewerProps) => {
   const deleteFile = async (filename: string) => {
     const formData = new FormData();
     formData.append("filename", filename);
-    const res = await axios.post("//192.168.50.163:2137/delete", formData, {
+    const res = await axios.post("//localhost:2137/delete", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -39,7 +41,7 @@ export const Viewer = ({ viewerType }: Types.ViewerProps) => {
   const getFiles = async () => {
     setFilesLoading(true);
     try {
-      const res = await axios.get("//192.168.50.163:2137/list-files");
+      const res = await axios.get("//localhost:2137/list-files");
       console.log(res.data);
       const files = res.data;
       const sortedFiles = files.sort(
@@ -81,6 +83,13 @@ export const Viewer = ({ viewerType }: Types.ViewerProps) => {
     { field: "size", headerName: "Size" },
     { field: "type", headerName: "Type" },
     {
+      field: "added",
+      headerName: "Added",
+      renderCell: (params) => (
+        <Typography>{params.row.uploadedDateShort}</Typography>
+      ),
+    },
+    {
       field: "actions",
       renderCell: (params) => (
         <IconButton
@@ -92,6 +101,7 @@ export const Viewer = ({ viewerType }: Types.ViewerProps) => {
       ),
       headerName: "Actions",
       width: 140,
+      sortable: false,
     },
   ];
 
@@ -100,50 +110,49 @@ export const Viewer = ({ viewerType }: Types.ViewerProps) => {
   }, []);
 
   return (
-    <>
-      <Box className="h-full w-full items-center p-4">
-        {filesLoading ? (
-          <CircularProgress className="fixed left-1/2 top-1/2" />
-        ) : viewerType ? (
-          <Grid container spacing={1}>
-            {files?.map((file, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} xl={2} key={file.uuid}>
-                <FileCard
-                  file={file}
-                  key={index}
-                  setFiles={setFiles}
-                  setFilesLoading={setFilesLoading}
-                  setFailedLoading={setFailedLoading}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        ) : (
-          <div className="LIST-TYPE">
-            {files ? (
-              <Container maxWidth="md">
-                <DataGrid
-                  disableColumnFilter
-                  disableColumnSelector
-                  disableDensitySelector
-                  disableRowSelectionOnClick
-                  disableEval
-                  disableColumnMenu
-                  rows={files}
-                  columns={columns}
-                  initialState={{
-                    pagination: { paginationModel: { page: 0, pageSize: 15 } },
-                  }}
-                  pageSizeOptions={[20, 40]}
-                />
-              </Container>
-            ) : (
-              <Empty />
-            )}
-          </div>
-        )}
-        <ViewerFail failedLoading={failedLoading} />
-      </Box>
-    </>
+    <Box className="h-full w-full items-center p-4">
+      {filesLoading ? (
+        <CircularProgress className="fixed left-1/2 top-1/2" />
+      ) : viewerType ? (
+        <Grid container spacing={1}>
+          {files?.map((file, index) => (
+            <Grid key={file.uuid} item xs={12} sm={6} md={4} lg={3} xl={2}>
+              <FileCard
+                file={file}
+                index={index}
+                setFiles={setFiles}
+                viewerType={viewerType}
+                setFilesLoading={setFilesLoading}
+                setFailedLoading={setFailedLoading}
+              />
+            </Grid>
+          ))}
+        </Grid>
+      ) : (
+        <div className="LIST-TYPE">
+          {files ? (
+            <Container maxWidth="md">
+              <DataGrid
+                disableColumnFilter
+                disableColumnSelector
+                disableDensitySelector
+                disableRowSelectionOnClick
+                disableEval
+                disableColumnMenu
+                rows={files}
+                columns={columns}
+                initialState={{
+                  pagination: { paginationModel: { page: 0, pageSize: 15 } },
+                }}
+                pageSizeOptions={[20, 40]}
+              />
+            </Container>
+          ) : (
+            <Empty />
+          )}
+        </div>
+      )}
+      <ViewerFail failedLoading={failedLoading} />
+    </Box>
   );
 };

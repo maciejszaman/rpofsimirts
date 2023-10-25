@@ -9,10 +9,8 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import {
   Box,
   Card,
-  CardActionArea,
   CardContent,
   CardMedia,
-  Container,
   Divider,
   IconButton,
   ListItemIcon,
@@ -21,6 +19,7 @@ import {
   MenuItem,
   Stack,
   Typography,
+  Zoom,
 } from "@mui/material";
 import axios from "axios";
 
@@ -29,10 +28,12 @@ export const FileCard = ({
   setFiles,
   setFilesLoading,
   setFailedLoading,
+  index,
+  viewerType,
 }: Types.FileCardProps) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
-  const photoLocation = "http://192.168.50.163:2137/files/" + file.name;
+  const photoLocation = "http://localhost:2137/files/" + file.name;
 
   const open = Boolean(anchorEl);
 
@@ -44,12 +45,10 @@ export const FileCard = ({
     setAnchorEl(null);
   };
 
-  const uploadDate = new Date(file.createdAt);
-
   const getFiles = async () => {
     setFilesLoading(true);
     try {
-      const res = await axios.get("//192.168.50.163:2137/list-files");
+      const res = await axios.get("//localhost:2137/list-files");
       console.log(res.data);
       const files = res.data;
       const sortedFiles = files.sort(
@@ -82,7 +81,7 @@ export const FileCard = ({
   const deleteFile = async (filename: string) => {
     const formData = new FormData();
     formData.append("filename", filename);
-    const res = await axios.post("//192.168.50.163:2137/delete", formData, {
+    const res = await axios.post("//localhost:2137/delete", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
@@ -93,51 +92,57 @@ export const FileCard = ({
 
   return (
     <>
-      <Card sx={{ maxWidth: 345 }} className="max-w-xs">
-        {file.isFolder ? (
-          <Box
-            sx={{
-              height: 250,
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <FolderIcon fontSize="large" />
-          </Box>
-        ) : (
-          <a href={photoLocation}>
-            <CardMedia
-              sx={{ height: 250, objectFit: "cover" }}
-              component={file.isVideo ? "video" : "img"}
-              src={photoLocation}
-              alt="placeholder"
-            />
-          </a>
-        )}
-        <CardContent>
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ justifyContent: "space-between" }}
-          >
-            <Typography
+      <Zoom
+        in={viewerType}
+        timeout={{ enter: 500, exit: 250 }}
+        style={{ transitionDelay: `${index * 150}ms` }}
+      >
+        <Card sx={{ maxWidth: 345 }} className="max-w-xs">
+          {file.isFolder ? (
+            <Box
               sx={{
-                display: "-webkit-box",
-                overflow: "hidden",
-                WebkitBoxOrient: "vertical",
-                pl: "5",
-                WebkitLineClamp: 1,
+                height: 250,
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
               }}
             >
-              {file.name}
-            </Typography>
-            <IconButton onClick={handleClick} sx={{ padding: 0 }}>
-              <MoreVertIcon />
-            </IconButton>
-          </Stack>
-        </CardContent>
-      </Card>
+              <FolderIcon fontSize="large" />
+            </Box>
+          ) : (
+            <a href={photoLocation}>
+              <CardMedia
+                sx={{ height: 250, objectFit: "cover" }}
+                component={file.isVideo ? "video" : "img"}
+                src={photoLocation}
+                alt="placeholder"
+              />
+            </a>
+          )}
+          <CardContent>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{ justifyContent: "space-between" }}
+            >
+              <Typography
+                sx={{
+                  display: "-webkit-box",
+                  overflow: "hidden",
+                  WebkitBoxOrient: "vertical",
+                  pl: "5",
+                  WebkitLineClamp: 1,
+                }}
+              >
+                {file.name}
+              </Typography>
+              <IconButton onClick={handleClick} sx={{ padding: 0 }}>
+                <MoreVertIcon />
+              </IconButton>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Zoom>
       {/* MENU */}
       <Menu
         className="w-80 max-w-full"
@@ -183,7 +188,7 @@ export const FileCard = ({
           </ListItemIcon>
           <ListItemText>
             <Typography color="text.secondary">
-              {uploadDate.toUTCString()}
+              {file.uploadedDateLong}
             </Typography>
           </ListItemText>
         </MenuItem>

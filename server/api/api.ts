@@ -60,11 +60,13 @@ app.get("/list-files", async (req, res) => {
     const filepath = `${folderPath}/${filename}`;
     const stat = await fs.promises.stat(filepath);
     const fileExtension = path.extname(filepath).toLowerCase();
+    const createdAt = new Date(stat.birthtime);
     return {
       name: filename,
       type: filename.split(".").pop() || "",
       size: (stat.size / 1024 / 1024).toFixed(2) + "MB",
-      createdAt: stat.birthtime,
+      uploadedDateLong: createdAt.toUTCString(),
+      uploadedDateShort: createdAt.toLocaleDateString(),
       isFolder: stat.isDirectory(),
       id: uuidv4(),
       isVideo: fileExtension.includes(".mp4"),

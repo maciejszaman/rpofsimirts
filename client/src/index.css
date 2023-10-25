@@ -17,6 +17,9 @@ code {
     monospace;
 }
 
-.primarybutton {
-  background-color: #2c953a;
+* {
+  -ms-overflow-style: none;
+}
+::-webkit-scrollbar {
+  display: none;
 }

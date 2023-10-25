@@ -9,7 +9,6 @@ import TerminalIcon from "@mui/icons-material/Terminal";
 import Box from "@mui/material/Box";
 import {
   Button,
-  Container,
   Divider,
   Drawer,
   IconButton,
@@ -26,6 +25,7 @@ import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
 import DarkModeIcon from "@mui/icons-material/DarkMode";
 import LightModeIcon from "@mui/icons-material/LightMode";
 import MenuIcon from "@mui/icons-material/Menu";
+import SearchIcon from "@mui/icons-material/Search";
 
 export const Navigation = ({
   darkMode,
@@ -85,7 +85,7 @@ export const Navigation = ({
         </Stack>
         <Stack className="pr-4" direction="row" alignItems="center" spacing={2}>
           <IconButton onClick={handleViewerTypeToggle}>
-            <GridViewIcon />
+            {viewerType ? <GridViewIcon /> : <FormatListBulletedIcon />}
           </IconButton>
           <IconButton onClick={handleDarkModeToggle}>
             <DarkModeIcon />

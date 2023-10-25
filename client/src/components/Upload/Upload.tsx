@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { ReactNode, useEffect, useState } from "react";
 import * as Types from "./Upload.types";
 
 import axios from "axios";
@@ -9,15 +9,19 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   IconButton,
+  Step,
+  StepLabel,
+  Stepper,
   TextField,
+  Typography,
 } from "@mui/material";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
 import DeleteIcon from "@mui/icons-material/Delete";
 
-type NotificationType = "success" | "error";
-
 export const Upload = ({ open, setOpen }: Types.UploadProps) => {
+  const steps = ["Select a file", "Set a name"];
   const inputRef = React.useRef<HTMLInputElement | null>(null);
   const [file, setFile] = React.useState<File | null>();
   const [preview, setPreview] = React.useState<string | null>();
@@ -28,11 +32,28 @@ export const Upload = ({ open, setOpen }: Types.UploadProps) => {
 
   const [fileUploading, setFileUploading] = useState(false);
 
-  const isInvalid = uploadFileName === "" || uploadFileName.length > 48;
+  const [activeStep, setActiveStep] = useState(0);
+  const [skipped, setSkipped] = useState(new Set<number>());
 
-  //image
-  //video
-  //application
+  const isStepSkipped = (step: number) => {
+    return skipped.has(step);
+  };
+
+  const handleBack = () => {
+    setActiveStep((prevActiveStep) => prevActiveStep - 1);
+  };
+
+  const handleNext = () => {
+    let newSkipped = skipped;
+    if (isStepSkipped(activeStep)) {
+      newSkipped = new Set(newSkipped.values());
+      newSkipped.delete(activeStep);
+    }
+    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    setSkipped(newSkipped);
+  };
+
+  const isInvalid = uploadFileName === "" || uploadFileName.length > 48;
 
   const deleteFile = () => {
     setFile(null);
@@ -65,21 +86,15 @@ export const Upload = ({ open, setOpen }: Types.UploadProps) => {
       formData.append("filedata", file as File);
       formData.append("path", tempPath);
       try {
-        const res = await axios.post("//192.168.50.163:2137/upload", formData, {
+        const res = await axios.post("//localhost:2137/upload", formData, {
           headers: {
             "Content-Type": "multipart/form-data",
           },
         });
-        /*         openNotification(
-          res.data.title,
-          res.data.message,
-          res.data.title,
-          "bottomLeft"
-        ); */
-        setFileUploading(false);
         setTimeout(() => {
+          setFileUploading(false);
           window.location.reload();
-        }, 500);
+        }, 1000);
       } catch (err) {
         console.log(err);
         setFileUploading(false);
@@ -117,55 +132,83 @@ export const Upload = ({ open, setOpen }: Types.UploadProps) => {
   }, [file]);
 
   return (
-    <>
-      <Dialog open={open} onClose={handleClose}>
-        <DialogTitle>File settings</DialogTitle>
-        <DialogContent>
-          <input
-            hidden
-            type="file"
-            ref={inputRef}
-            onChange={handleFileChange}
-          />
-          <Button
-            disabled={file ? true : false || fileUploading}
-            onClick={handleUploadSelect}
-            variant="contained"
-            startIcon={<FileUploadIcon />}
-          >
-            {file ? "Select a file" : "File selected"}
-          </Button>
-          {file ? (
-            <IconButton onClick={deleteFile}>{<DeleteIcon />}</IconButton>
-          ) : null}
-
-          {file && show ? (
-            <Box className="pt-2">
-              <TextField
-                error={isInvalid ? true : false}
-                onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-                  setUploadFileName(event.target.value);
-                }}
-                value={uploadFileName}
-                placeholder="Uploaded file's name"
-                type="text"
-              />
-            </Box>
-          ) : null}
-        </DialogContent>
-        <DialogActions>
-          <Button variant="outlined" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button
-            variant="contained"
-            disabled={isInvalid ? true : false}
-            onClick={() => handleUploadButton()}
-          >
-            Upload
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+    <Dialog open={open} onClose={handleClose} fullWidth maxWidth={"xs"}>
+      <DialogTitle>
+        <Stepper activeStep={activeStep}>
+          {steps.map((label, index) => {
+            const stepProps: { completed?: boolean } = {};
+            const labelProps: {
+              optional?: ReactNode;
+            } = {};
+            if (isStepSkipped(index)) {
+              stepProps.completed = false;
+            }
+            return (
+              <Step key={label} {...stepProps}>
+                <StepLabel {...labelProps}>{label}</StepLabel>
+              </Step>
+            );
+          })}
+        </Stepper>
+      </DialogTitle>
+      <Divider />
+      <DialogContent>
+        {activeStep === 0 ? (
+          <>
+            <input
+              hidden
+              type="file"
+              ref={inputRef}
+              onChange={handleFileChange}
+            />
+            <Button
+              disabled={file ? true : false || fileUploading}
+              onClick={handleUploadSelect}
+              variant="contained"
+              startIcon={<FileUploadIcon />}
+            >
+              {!file ? "Select a file" : "File selected"}
+            </Button>
+            {file ? (
+              <IconButton onClick={deleteFile}>{<DeleteIcon />}</IconButton>
+            ) : null}
+          </>
+        ) : null}
+        {activeStep === 1 ? (
+          <>
+            <TextField
+              fullWidth
+              label={"Set a new name for the file"}
+              error={isInvalid ? true : false}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                setUploadFileName(event.target.value);
+              }}
+              value={uploadFileName}
+              placeholder="An ace, blindfolded"
+              type="text"
+            />
+          </>
+        ) : null}
+      </DialogContent>
+      <DialogActions>
+        <Button
+          className="w-24"
+          variant="outlined"
+          onClick={activeStep === 0 ? handleClose : handleBack}
+        >
+          {activeStep === 0 ? "Cancel" : "Back"}
+        </Button>
+        <Button
+          className="w-24"
+          variant={activeStep === 1 ? "contained" : "outlined"}
+          disabled={isInvalid || fileUploading || !file ? true : false}
+          onClick={activeStep === 1 ? () => handleUploadButton() : handleNext}
+        >
+          {fileUploading ? "Uploading" : null}
+          {activeStep === 0 ? "Next" : null}
+          {!fileUploading && !(activeStep === 0) ? "Upload" : null}
+        </Button>
+      </DialogActions>
+    </Dialog>
   );
 };
